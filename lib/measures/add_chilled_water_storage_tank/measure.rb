@@ -559,6 +559,9 @@ class AddChilledWaterStorageTank < OpenStudio::Measure::ModelMeasure
     sim_control.setRunSimulationforSizingPeriods(false)
     sim_control.setRunSimulationforWeatherFileRunPeriods(true)
 
+    # TODO: add IF condition when there is existing secondary loop, just need to add new tank, no need to add pump
+    # TODO: test with large office building
+
     sec_loop = OpenStudio::Model::PlantLoop.new(model)
     sec_loop.setName("Chilled Water Secondary Loop")
     selected_primary_loop.setName("Chilled Water Primary Loop")
@@ -640,6 +643,8 @@ class AddChilledWaterStorageTank < OpenStudio::Measure::ModelMeasure
       end
     end
 
+    # TODO: clone pump from either supply or demand side to secondary loop, update the primary loop pump pressure drop (check online)
+    # TODO: test with medium office
     # move pump from demand component if any to secondary loop
     selected_primary_loop.demandComponents.each do |comp|
       if comp.to_PumpConstantSpeed.is_initialized
