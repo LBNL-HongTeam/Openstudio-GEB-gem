@@ -191,16 +191,28 @@ class Preheating < OpenStudio::Measure::ModelMeasure
     alt_periods = runner.getBoolArgumentValue('alt_periods', user_arguments)
 
     if alt_periods
-      state = model.getWeatherFile.stateProvinceRegion
-      if state == ''
-        runner.registerError('Unable to find state in model WeatherFile. The measure cannot be applied.')
-        return false
+      # First find state information from building.additionalProperties
+      # If not found, find it in the weather file.
+      bldg_add_properties = model.getBuilding.additionalProperties
+      state = bldg_add_properties.getFeatureAsString('state_abbreviation')
+      if state.empty?
+        state = model.getWeatherFile.stateProvinceRegion
+        if state == ''
+          runner.registerError('Unable to find state information in model. The measure cannot be applied.')
+          return false
+        else
+          runner.registerInfo("Using state from weather file as '#{state}' to determine peak period.")
+        end
+      else
+        state = state.get
+        runner.registerInfo("Using state from additionalProperties as '#{state}' to determine peak period.")
       end
+
       file = File.open(File.join(File.dirname(__FILE__), "../../../files/seasonal_shifting_take_hours.json"))
       default_peak_periods = JSON.load(file)
       file.close
       unless default_peak_periods.key?state
-        runner.registerAsNotApplicable("No default inputs for the state of the WeatherFile #{state}")
+        runner.registerAsNotApplicable("No default inputs for the state #{state}")
         return false
       end
       peak_periods = default_peak_periods[state]
